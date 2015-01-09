@@ -1,0 +1,81 @@
+/*
+    Application window styling
+    -------------------------------------
+*/
+#appwindow {
+    position: absolute;
+    left:       0;
+    right:      0;
+    top:        0;
+    bottom:     8.5rem;
+
+    padding:    0.25rem;
+    overflow:   auto;
+}
+
+#appwindow h1,
+#appwindow h2,
+#appwindow h3 {
+    margin: 0;
+    padding: 0;
+}
+
+#appwindow .container,
+#appwindow .audiopanel {
+    margin:     5px;
+    padding:    5px;
+
+    -moz-border-radius: 5px;
+    border-radius:      5px;
+}
+
+#appwindow .audiopanel {
+    background-color: #fcfcfc;
+}
+
+#appwindow .container {
+    background-color: #f7f3de;
+}
+
+/* Button style */
+.ui-button.ui-widget{
+    min-width: 10rem;
+}
+
+/*
+    Output window styling
+    -------------------------------------
+*/
+#outputwindow {
+    position:   absolute;
+    height:     8.5rem;
+    left:       0;
+    right:      0;
+
+    bottom:     0;
+
+    margin:     0;
+    padding:    0;
+}
+
+#outputwindow h1 {
+    font-size:      1.0rem;
+    font-weight:    bold;
+    color:          #A0A0A0;
+    margin:         0;
+    padding:        0;
+}
+
+#output {
+    font-size:  0.8rem;
+    height:     6rem;
+    overflow:   auto;
+    margin:     0.25rem;
+    padding:    0.25rem;
+    border:     2px solid #A0A0A0
+}
+
+#output p {
+    margin:     0;
+    padding:    0;
+}

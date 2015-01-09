@@ -1,1 +1,154 @@
-Hello Web Audio!
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>Web Audio</title>
+
+    <!-- CSS style sheets -->
+    <link href="thirdparty/css/pepper-grinder/jquery-ui-1.10.2.custom.css" rel="stylesheet">
+    <link href="app.css" rel="stylesheet">
+
+    <!-- Third party libraries -->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" ></script>
+    <script type="text/javascript" src="thirdparty/jquery-ui-1.10.2.custom.min.js"></script>
+
+    <!-- Helper libraries -->
+    <script type="text/javascript" src="utils.js"></script>
+
+    <!-- Web Audio application -->
+    <script type="text/javascript">
+
+
+        function loadAudioFromURL ( url, loadedCallbackFn, callbackContext ) {
+            var request = new XMLHttpRequest();
+            request.open("GET", url, true);
+            request.responseType = "arraybuffer";
+
+            request.onload = function() {
+                consoleout( "Loaded audio'" + url + "'");
+                later(0, loadedCallbackFn, callbackContext, request.response);
+            };
+
+            request.onerror = function() {
+                consoleout ("ERROR: failed to load audio from " + url);
+            };
+
+            request.send();
+        }
+
+        /**
+         * Web Audio application
+         * @constructor
+         */
+        function WebAudioApp() {}
+
+        /**
+         * Application entry point
+         */
+        WebAudioApp.prototype.start = function() {
+            if( !this.initWebAudio() ) {
+                consoleout( "Browser does not support WebAudio" );
+                return
+            }
+            this.initBufferedAudioLoopToggle("#choir", "assets/looperman-morpheusd-amazing-pt2-choir-120-bpm.wav");
+        };
+
+        WebAudioApp.prototype.initWebAudio = function() {
+            var audioContextClass = window.webkitAudioContext || window.AudioContext;
+            if( audioContextClass == null)
+                return false;
+
+            this.audioContext = new audioContextClass();
+            return true;
+        };
+
+        WebAudioApp.prototype.initBufferedAudioLoopToggle = 
+        function( elemId, audioSrc) {
+            //init button and disable
+            var jqButton = $(elemId).button({ disabled: true});
+
+            //load the audio
+            var audioBuffer;
+            loadAudioFromURL( audioSrc, function(audioData){
+                //decode the audio data into an audio buffer
+                this.audioContext.decodeAudioData(
+                                                  audioData,
+                                                  function(audioBufferIn) {
+                                                    consoleout( "Decoded audio for '" +
+                                                               audioSrc + "'");
+
+                                                    //cache the audio buffer
+                                                    audioBuffer = audioBufferIn;
+
+                                                    //is audio ready? enable btn
+                                                    jqButton.button(
+                                                                    "option",
+                                                                    "disabled",
+                                                                    false );
+                                                  });
+            }, this);
+
+            //register click event listener playback
+            var me = this;
+            var activeNode;
+            jqButton.click(function ( event ){
+                //stop the active source node..
+                if( activeNode != null ) {
+                    if( activeNode.stop instanceof Function )
+                        activeNode.stop(0);
+                    if(activeNode.noteOff instanceof Function)
+                        activeNode.noteOff( 0 );
+
+                    activeNode = null;
+
+                    consoleout ("Stopped audio loop '" + audioSrc + "'");
+                }
+
+                //start new playback if btn checked
+                if($(this).is(':checked')) {
+                    var sourceNode = me.audioContext.createBufferSource();
+                    sourceNode.buffer = audioBuffer;
+
+                    //connect i to the speakers
+                    sourceNode.connect ( me.audioContext.destination);
+
+                    //start the audio playback
+                    if( sourceNode.start instanceof Function )
+                        sourceNode.start( 0 );
+                    if (sourceNode.noteOn instanceof Function )
+                        sourceNode.noteOn( 0 );
+
+                    //turn on looping
+                    sourceNode.loop = true;
+
+                    //keep track of the active sound loop
+                    activeNode = sourceNode;
+
+                    consoleout("Played audio loop'" + audioSrc + "'");
+                }
+            });
+        };
+    </script>
+
+    <!-- Application entry -->
+    <script type="text/javascript">
+        var appInst = new WebAudioApp();
+
+        $(document).ready( function(){
+            appInst.start();
+        });
+    </script>
+</head>
+<body>
+    <div id="appwindow">
+        <h2>Playing Audio In a Loop</h2>
+        <form>
+            <input type="checkbox" id="choir" />
+            <label for="choir">Choir Loop</label>
+        </form>
+    </div>
+    <div id="outputwindow">
+        <h1>Console</h1>
+        <div id="output"></div>
+    </div>
+</body>
+</html>
