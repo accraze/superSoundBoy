@@ -120,6 +120,10 @@
                     //turn on looping
                     sourceNode.loop = true;
 
+                    //set custom loop segment
+                    sourceNode.loopStart = audioBuffer.duration * 0.5;
+                    sourceNode.loopEnd = audioBuffer.duration;
+
                     //keep track of the active sound loop
                     activeNode = sourceNode;
 
