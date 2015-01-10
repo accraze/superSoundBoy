@@ -8,7 +8,7 @@
     <link href="app.css" rel="stylesheet">
 
     <!-- Third party libraries -->
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" ></script>
+    <script type="text/javascript" src="thirdparty/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="thirdparty/jquery-ui-1.10.2.custom.min.js"></script>
 
     <!-- Helper libraries -->
@@ -16,28 +16,43 @@
 
     <!-- Web Audio application -->
     <script type="text/javascript">
-    function loadAudioFromUrl( url, loadedCallbackFn, callbackContext ) {
+        /**
+         * Load an audio sample from a URL
+         * @param {String}                                  url                     The audio asset url
+         * @param {function(audioData:Array)}               [loadedCallbackFn]      A callback function triggered when the audio is successfully loaded
+         * @param {*}                                       [callbackContext]       The callback function context
+         */
+        function loadAudioFromUrl( url, loadedCallbackFn, callbackContext ) {
             var request = new XMLHttpRequest();
             request.open("GET", url, true);
             request.responseType = "arraybuffer";
 
             request.onload = function() {
                 consoleout( "Loaded audio '" + url + "'" );
-                later( 0, loadedCallbackFn, callbackContext, request.response );
+
+                later( 0,
+                       loadedCallbackFn,
+                       callbackContext,
+                       request.response );
             };
 
             request.onerror = function() {
-                consoleout( "ERROR: Failed to load audio from " + url );
+                consoleout(
+                    "ERROR: Failed to load audio from " + url );
             };
 
             request.send();
         }
 
+        /**
+         * The audio layer class
+         *
+         * @param {AudioContext}  audioContext  The bus' parent audio context
+         *
+         * @constructor
+         */
         function AudioLayer( audioContext ) {
             this.audioContext = audioContext;
-
-            // Create the ducker GainNode
-            this.duckNode = audioContext.createGain();
 
             // Create the volume GainNode
             this.volNode = audioContext.createGain();
@@ -45,34 +60,43 @@
             // Expose the gain control
             this.gain = this.volNode.gain;
 
-            // Connect the volume control to the ducker
-            this.volNode.connect( this.duckNode );
-
-            // Connect the ducker to the speakers
-            this.duckNode.connect( this.audioContext.destination );
+            // Connect the volume control to the speakers
+            this.volNode.connect( audioContext.destination );
         }
 
+        /**
+         * Play an audio buffer sound
+         *
+         * @param {AudioBuffer} audioSrc    The source audio buffer
+         * @param {Number}      startSecs   The scheduled start time
+         * @param {Boolean}     [loop]      true to enable looping
+         *
+         * @returns {AudioBufferSourceNode}
+         */
+        AudioLayer.prototype.playAudioBuffer = function( audioSrc,
+                                                         startSecs,
+                                                         loop ) {
+            // Create the audio source node
+            var sourceNode = this.audioContext.createBufferSource();
+            sourceNode.buffer = audioSrc;
 
-        function stopNode( node, stopSecs ) {
-            if( node.stop instanceof Function )
-                node.stop( stopSecs );
-            if( node.snoteOff instanceof Function )
-                node.noteOff( stopSecs );
-        }
+            // Add backwards compatibility
+            if( sourceNode.stop == null )
+                sourceNode.stop = sourceNode.noteOff;
+            if( sourceNode.start == null )
+                sourceNode.start = sourceNode.noteOn;
 
-        function startNode( node, startSecs, loop) {
-            //turn on looping
+            // Turn on looping if necessary
             if( loop )
-                node.loop = true;
+                sourceNode.loop = true;
 
-            //start playback at a predefined time
-            if( node.start instanceof Function )
-                node.start( startSecs );
-            if( node.noteOn instanceof Function )
-                node.noteOn( startSecs );
+            // Connect the node to the volume control
+            sourceNode.connect( this.volNode );
 
-            return node;
-        }
+            // Start playback
+            sourceNode.start( startSecs );
+            return sourceNode;
+        };
 
         /**
          * Web Audio application
@@ -81,101 +105,278 @@
         function WebAudioApp() {}
 
         /**
-         * Application entry point
+         * Initialize WebAudio
+         * @private
+         *
+         * @return {Boolean}    Returns true if successful.
          */
-        WebAudioApp.prototype.start = function() {
-            if(!this.initWebAudio() ) {
-                consoleout("Browser does not support web audio!!")
-                return;
-            }
-             this.initMusicControls('#choir', 'assets/looperman-morpheusd-amazing-pt2-choir-120-bpm.wav', '#choirvol');
-            this.initMusicControls('#piano', 'assets/looperman-morpheusd-dreamworld-fullpiano-120-bpm.wav', '#pianovol');
-        };
-
         WebAudioApp.prototype.initWebAudio = function() {
-            var audioContextClass = window.webkitAudioContext || window.AudioContext;
+            var audioContextClass = window.webkitAudioContext
+                                    || window.AudioContext;
 
             if( audioContextClass == null )
                 return false;
 
             this.audioContext = new audioContextClass();
+
+            // Add backward compatibility
+            if( this.audioContext.createGain == null )
+                this.audioContext.createGain = this.audioContext.createGainNode;
+
             return true;
         };
 
-        WebAudioApp.prototype.initMusicControls = function( elemId, audioSrc, elemVolId ){
-            //init button and disable it by default
-            var jqButton = $( elemId ).button({ disabled: true });
-
-            //load audio
-            var audioBuffer;
+        /**
+         * Loads audio into an AudioBuffer
+         * @private
+         *
+         * @param {String}                          audioSrc
+         * @param {function(buffer:AudioBuffer)}    callbackFn
+         * @param {*}                               [context]
+         */
+        WebAudioApp.prototype.loadAudio = function( audioSrc, callbackFn, context ) {
             loadAudioFromUrl( audioSrc, function(audioData){
-                //decode the audio data into an audio buffer
+                // Decode the audio data into an audio buffer
                 this.audioContext.decodeAudioData(
-                                                  audioData,
-                                                  function( audioBufferIn ) {
-                                                    consoleout( "Decoded audio for '"
-                                                               + audioSrc + "'");
+                    audioData,
+                    function( audioBuffer ) {
+                        consoleout( "Decoded audio for '"
+                                + audioSrc + "'" );
 
-                                                    //cache the audio buffer
-                                                    audioBuffer = audioBufferIn;
+                        callbackFn.call( context || this, audioBuffer );
+                    }
+                );
+            }, this );
+        };
 
-                                                    //enable the button once the audio is ready
-                                                    jqButton.button("option", "disabled", false);
-                                                  });
-            }, this);
+        /**
+         * Application entry point
+         */
+        WebAudioApp.prototype.start = function() {
+            if( !this.initWebAudio() ) {
+                consoleout( "Browser does not support WebAudio" );
+                return;
+            }
 
-            //create the volume control gain node
-            var context = this.audioContext,
-                volNode;
+            // Initialize the music tracker attributes
+            this.musicLayer = new AudioLayer( this.audioContext );
+            this.musicGroups = {};
+            this.musicStartSecs = -1;
+            this.activeMusicGroupCount = 0;
 
-            if( context.createGain instanceof Function )
-                volNode = context.createGain();
-            else if( context.createGainNode instanceof Function )
-                volNode = context.createGainNode();
+            // Initialize the beats as one group
+            this.initMusic(
+                "#beat1",
+                "beats",
+                "assets/looperman-blandbru-nu-step-with-a-punch-120-bpm.wav" );
+            this.initMusic(
+                "#beat2",
+                "beats",
+                "assets/looperman-blueeskies-club-beat-120-bpm.wav" );
 
-            //connect the volume control to the speaker
-            volNode.connect( context.destination );
+            // Initialize the melodies as one group
+            this.initMusic(
+                "#melody1",
+                "melodies",
+                "assets/looperman-morpheusd-dreamworld-fullpiano-120-bpm.wav" );
+            this.initMusic(
+                "#melody2",
+                "melodies",
+                "assets/looperman-morpheusd-dreamworld-piano-120-bpm.wav" );
 
-            //create volume control
-            $( elemVolId ).slider({
-                min: volNode.gain.minValue,
-                max: volNode.gain.maxValue,
-                step: 0.01,
+            // Initialize the accompaniments as individual groups
+            this.initMusic(
+                "#guitar",
+                "guitar",
+                "assets/looperman-morpheusd-dreamyworld-guitar-120-bpm.wav" );
+            this.initMusic(
+                "#pad",
+                "pad",
+                "assets/looperman-morpheusd-dreamyworld-pad-120-bpm.wav" );
 
-                value: volNode.gain.value,
-                //add cb function when
-                //user moves slider
-                slide: function( event, ui) {
-                    //set the volume directly
-                    volNode.gain.value = ui.value;
+            // Initialize the volume slider
+            this.initSlider(
+                    "#musicvol",
+                    this.musicLayer.gain,
+                    0.01,
+                    "music volume" );
+        };
 
-                    consoleout( "Adjusted music volume: " + ui.value );
+        /**
+         * Initialize a slider
+         * @private
+         *
+         * @param {String}      elemId          The slider's HTML id
+         * @param {AudioParam}  audioParam      The associated audio parameter
+         * @param {Number}      stepSize        The slider step size
+         * @param {String}      label           The slider label
+         * @param {Object}      [override]      The slide overrides
+         *
+         * @param {String}      override.value          Slider value
+         * @param {Number}      override.min            Minimum slider value
+         * @param {Number}      override.max            Maximum slider value
+         * @param {String}      override.orientation    Slider orientation
+         */
+        WebAudioApp.prototype.initSlider = function( elemId,
+                                                     audioParam,
+                                                     stepSize,
+                                                     label,
+                                                     override ) {
+
+            override = override || {};
+
+            // Initialize the slider
+            $( elemId ).slider({
+                orientation: override.orientation != null ? override.orientation : "horizontal",
+
+                min: override.min != null ? override.min : audioParam.minValue,
+                max: override.max != null ? override.max : audioParam.maxValue,
+
+                step: stepSize,
+
+                value: override.value != null ? override.value : audioParam.value,
+
+                // Add a callback function when the user
+                // moves the slider
+                slide: function( event, ui ) {
+                    // Set the volume directly
+                    audioParam.value = ui.value;
+
+                    consoleout( "Adjusted '"
+                            + label + "': "
+                            + ui.value );
                 }
             });
+        };
 
+        /**
+         * Initialize a music toggle
+         * @private
+         *
+         * @param {String}  elemId          The button's HTML id
+         * @param {String}  groupId         The music group id
+         * @param {String}  audioSrc        The audio data's URL
+         *
+         */
+        WebAudioApp.prototype.initMusic = function( elemId,
+                                                    groupId,
+                                                    audioSrc ) {
+            // Initialize the button and disable it
+            var jqButton = $( elemId ).button({ disabled: true });
+
+            // Load the audio
+            var audioBuffer;
+            this.loadAudio( audioSrc, function( audioBufferIn ) {
+                // Cache the audio buffer
+                audioBuffer = audioBufferIn;
+
+                // Enable the toggle when audio is ready
+                jqButton.button( "option", "disabled", false );
+            }, this );
+
+            // Initialize the group as necessary
+            if( this.musicGroups[ groupId ] == null )
+                this.musicGroups[ groupId ] = {};
+
+            var musicLayer = this.musicLayer;
+            var musicGroup = this.musicGroups[ groupId ];
+
+            // Register toggle click event
             var me = this;
-            var activeNode;
-            jqButton.click(function( event) {
-                //stop the active source node
-                if(activeNode != null) {
-                    stopNode( activeNode, 0 );
-                    activeNode = null;
+            jqButton.click(function( event ) {
+                // Stopping the active loop?
+                if( !$(this).is(':checked') ) {
+                    consoleout( "Stopping loop '"
+                            + musicGroup.activeSrc + "'" );
 
-                    consoleout( "Stopped music loop'" + audioSrc + "'" );
+                    // Stop the loop
+                    musicGroup.activeLoop.stop( 0 );
+
+                    // Update the group music state
+                    musicGroup.activeLoop = null;
+                    musicGroup.activeSrc = null;
+                    musicGroup.activeElemId = null;
+
+                    // Update the global music state
+                    me.activeMusicGroupCount--;
+
+                    // No more active music? Reset the
+                    // the next music start time
+                    if( me.activeMusicGroupCount == 0 )
+                        me.musicStartSecs = -1;
+
+                    return;
                 }
 
-                //start new sound on btn activation
-                if($(this).is(':checked')) {
-                    //start loop playback
-                    activeNode = me.audioContext.createBufferSource();
-                    activeNode.buffer = audioBuffer;
-                    startNode( activeNode, 0, true );
+                // If we get here, we're starting a loop
+                var BUFFER_TIME = 2 / 1000; // 2 ms time buffer
 
-                    //conect it to volume control
-                    activeNode.connect( volNode );
+                // Assume the earliest transition time
+                var startSecs = me.audioContext.currentTime
+                        + BUFFER_TIME;
 
-                    consoleout( "Played music loop '" + audioSrc + "'" );
+                // If it's not the first music group activated,
+                // start playback on the next downbeat
+                if( me.activeMusicGroupCount > 0 ) {
+                    var BPM               = 120;      // 120 bpm
+                    var BEATS_PER_MEASURE = 4;
+
+                    var BEAT_DURATION    = 60 / BPM;
+                    var MEASURE_DURATION = BEAT_DURATION
+                            * BEATS_PER_MEASURE;
+
+                    // Calculate the elapsed time for the active loop
+                    var elapsedSecs = startSecs - me.musicStartSecs;
+
+                    if( elapsedSecs > 0 ) {
+                        // Adjust the transition time to occur
+                        // on the next downbeat
+                        var measureSecs = elapsedSecs % MEASURE_DURATION;
+
+                        if( measureSecs > 0 )
+                            startSecs += MEASURE_DURATION
+                                    - measureSecs;
+                    } else {
+                        // The active loop hasn't started? Use the last
+                        // transition time
+                        startSecs = me.musicStartSecs;
+                    }
                 }
+
+                // Does the group have an active loop?
+                if( musicGroup.activeLoop != null ) {
+                    // Stop the last active loop at the playback time
+                    musicGroup.activeLoop.stop( startSecs );
+
+                    // Turn off the last active loop's toggle
+                    $( musicGroup.activeElemId ).prop('checked', false )
+                            .button( "refresh" );
+                }
+
+                // Schedule the new loop playback
+                var audioNode = musicLayer.playAudioBuffer(
+                        audioBuffer,
+                        startSecs,
+                        true );
+
+                // Output a console message to indicate the status
+                if( musicGroup.activeLoop == null )
+                    consoleout( "Playing loop '"
+                            + audioSrc + "'" );
+                else
+                    consoleout( "Transition from loop '"
+                            + musicGroup.activeSrc + "' to '"
+                            + audioSrc );
+
+                // Update the global music state
+                me.musicStartSecs = startSecs;
+                if( musicGroup.activeLoop == null )
+                    me.activeMusicGroupCount++;
+
+                // Update the group music state
+                musicGroup.activeLoop = audioNode;
+                musicGroup.activeSrc = audioSrc;
+                musicGroup.activeElemId = elemId;
             });
         };
     </script>
@@ -191,16 +392,33 @@
 </head>
 <body>
     <div id="appwindow">
-        <h2>Playing Audio In a Loop</h2>
+        <h2>Audio Mixer</h2>
         <form>
-            <input type="checkbox" id="choir" />
-            <label for="choir">Choir Loop</label>
-            <span>VOLUME</span>
-            <span id="choirvol" style="display: inline-block; width: 300px;"></span><hr/>
-            <input type="checkbox" id="piano" />
-            <label for="piano">Piano Loop</label>
-            <span>VOLUME</span>
-            <span id="pianovol" style="display: inline-block; width: 300px;"></span>
+            <div class="audiopanel" style="text-align: center;">
+                <span id="musicvol_label">Volume </span>
+                <span id="musicvol" style="display: inline-block; width: 300px;"></span>
+            </div>
+            <div class="audiopanel">
+                <h3>Beats</h3>
+                <input type="checkbox" id="beat1" />
+                <label for="beat1">Beat 1</label>
+                <input type="checkbox" id="beat2" />
+                <label for="beat2">Beat 2</label>
+            </div>
+            <div class="audiopanel">
+                <h3>Melody</h3>
+                <input type="checkbox" id="melody1" />
+                <label for="melody1">Melody 1</label>
+                <input type="checkbox" id="melody2" />
+                <label for="melody2">Melody 2</label>
+            </div>
+            <div class="audiopanel">
+                <h3>Accompaniments</h3>
+                <input type="checkbox" id="guitar" />
+                <label for="guitar">Guitar</label>
+                <input type="checkbox" id="pad" />
+                <label for="pad">Pad</label>
+            </div>
         </form>
     </div>
     <div id="outputwindow">
