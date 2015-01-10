@@ -33,6 +33,26 @@
             request.send();
         }
 
+        function AudioLayer( audioContext ) {
+            this.audioContext = audioContext;
+
+            // Create the ducker GainNode
+            this.duckNode = audioContext.createGain();
+
+            // Create the volume GainNode
+            this.volNode = audioContext.createGain();
+
+            // Expose the gain control
+            this.gain = this.volNode.gain;
+
+            // Connect the volume control to the ducker
+            this.volNode.connect( this.duckNode );
+
+            // Connect the ducker to the speakers
+            this.duckNode.connect( this.audioContext.destination );
+        }
+
+
         function stopNode( node, stopSecs ) {
             if( node.stop instanceof Function )
                 node.stop( stopSecs );
@@ -157,7 +177,7 @@
                     consoleout( "Played music loop '" + audioSrc + "'" );
                 }
             });
-        }
+        };
     </script>
 
     <!-- Application entry -->
