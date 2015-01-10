@@ -60,71 +60,89 @@
             // Expose the gain control
             this.gain = this.volNode.gain;
 
-            //calc freq metrics
-            var EQ_FREQ_MARGIN = 1000; //margin for equalizer range
-            var NODES_NUM = 5; //number of equalizer nodes
+            // Calculate the frequency metrics
+            var EQ_FREQ_MARGIN = 1000;  // margin for equalizer range
+            var NODES_NUM = 5;          // number of equalizer nodes
 
             var tempFilter = audioContext.createBiquadFilter();
-            var freqMin = tempFilter.frequency.minValue + EQ_FREQ_MARGIN;
-            var freqMax = tempFilter.frequency.minValue - EQ_FREQ_MARGIN;
+            var freqMin = 10 + EQ_FREQ_MARGIN;
+            var freqMax = Math.round(this.audioContext.sampleRate * 0.5 ) - EQ_FREQ_MARGIN;
             var freqStep = (freqMax - freqMin) / (NODES_NUM - 1);
 
-            //create eq nodes for even spectrum coverage
+            console.log(tempFilter);
+            console.log( 'freq min=' + freqMin);
+             console.log( 'freq max=' + freqMax);
+
+            // Create the equalizer nodes to cover the
+            // frequency spectrum evenly
             var headNode = audioContext.destination;
             this.eqNodes = [];
             this.eqParms = [];
-            for( var nodeIndex = 0; nodeIndex < NODES_NUM; nodeIndex++ ){
-                //set up the filter
+            for( var nodeIndex = 0;
+                 nodeIndex < NODES_NUM;
+                 nodeIndex++ ) {
+                // Set up the filter
                 var eqNode = audioContext.createBiquadFilter();
 
-                eqNode.frequency.value = Math.round(freqMin + (nodeIndex * freqStep));
-
-                if( nodeIndex == 0) {
-                    //use a low shelf filter for lowest filter
+                eqNode.frequency.value =
+                        Math.round( freqMin + (nodeIndex * freqStep) );
+                console.log( Math.round( freqMin + (nodeIndex * freqStep) ));
+                if( nodeIndex == 0 ) {
+                    // Use a low shelf filter for the lowest filter
                     eqNode.type = "lowshelf";
-                } else if (nodeIndex == NODES_NUM - 1) {
-                    eqNode.type = "highshelf"; // use hi-shelf filter for highest node
+                } else if( nodeIndex == NODES_NUM - 1 ) {
+                    // Use a high shelf filter for the lowest filter
+                    eqNode.type = "highshelf";
                 } else {
                     eqNode.type = "peaking";
                 }
 
-                //connect to the previous node
+                // Connect to the previous node
                 eqNode.connect( headNode );
 
-                //keep track of node
-                this.eqNodes.push(eqNode);
+                // Keep track of the node
+                this.eqNodes.push( eqNode );
 
-                //add the audio params to eq param array
+                // Add the tweakable audio parameters to the
+                // equalizer parameter array
                 this.eqParms.push({
-                    frequency: eqNode.frequency,
-                    Q: eqNode.Q,
-                    gain: eqNode.gain 
-                });
+                    frequency:  eqNode.frequency,
+                    Q:          eqNode.Q,
+                    gain:       eqNode.gain
+                } );
 
-                //keep track of head node
+
+
+                // Keep track of the head node
                 headNode = eqNode;
             }
 
-            //connect the volume control to the last head node
+            // Connect the volume control to the last head node
             this.volNode.connect( headNode );
-
-
         }
 
+        /**
+         * Returns the equalizer frequency response
+         *
+         * @param {Float32Array}  freqs   List of frequencies to sample
+         *
+         * @returns {Float32Array}   The equalizer frequency response in dB
+         */
         AudioLayer.prototype.getEqResponse = function( freqs ) {
             var magCombined = new Float32Array( freqs.length );
 
-            //get the freq response from all the eq nodes
+            // Get the frequency response from all the eq nodes
             var eqNodes = this.eqNodes;
             var magCurr = new Float32Array( freqs.length );
             var phaseCurr = new Float32Array( freqs.length );
-            for(var eqIndex=0; eqIndex<eqNodes.length; eqIndex++ ) {
+            for( var eqIndex = 0; eqIndex < eqNodes.length; eqIndex++ ) {
                 eqNodes[ eqIndex ].getFrequencyResponse(
-                                                        freqs,
-                                                        magCurr,
-                                                        phaseCurr );
-                //combine node magnitudes
-                for( var freqIndex = 0; freqIndex < freqs.length; freqIndex++) {
+                        freqs,
+                        magCurr,
+                        phaseCurr );
+
+                // Combine the node magnitudes
+                for( var freqIndex = 0; freqIndex < freqs.length; freqIndex++ ) {
                     var magDb = Math.log(magCurr[ freqIndex ]) * 20;
                     magCombined[ freqIndex ] += magDb;
                 }
@@ -270,112 +288,117 @@
                     0.01,
                     "music volume" );
 
-            //init the eq sliders
+            // Initialize the equalizer sliders
             var eqParms = this.musicLayer.eqParms;
-            for( var nodeIndex = 0; nodeIndex < eqParms.length; nodeIndex++) {
+            for( var nodeIndex = 0; nodeIndex < eqParms.length; nodeIndex++ ) {
                 var parms = eqParms[ nodeIndex ];
-                var freqValue = String( parms. frequency.value );
+                var freqValue = String( parms.frequency.value );
                 this.initSlider(
-                                "#eq_gain_" + nodeIndex,
-                                parms.gain,
-                                0.01,
-                                "Gain " + freqValue + " Hz",
-                                {
-                                    orientation: "vertical"
-                                } )
+                    "#eq_gain_" + nodeIndex,
+                    parms.gain,
+                    0.01,
+                    "Gain " + freqValue + " Hz",
+                    {
+                        orientation: "vertical"
+                    } );
                 this.initSlider(
-                                "eq_q_" + nodeIndex,
-                                parms.Q,
-                                0.01,
-                                "Q " + freqValue + " Hz",
-                                {
-                                    orientation: "vertical",
-                                    min: 0.25,
-                                    max: 2.5
-                                } );
+                    "#eq_q_" + nodeIndex,
+                    parms.Q,
+                    0.01,
+                    "Q " + freqValue + " Hz",
+                    {
+                        orientation: "vertical",
+                        min: 0.25,
+                        max: 2.5
+                    } );
 
-                //label
-                $("eq_label_" + nodeIndex).text( freqValue + " Hz" );
+                // Set up the label
+                $("#eq_label_" + nodeIndex).text( freqValue + " Hz" );
             }
 
-            //setup eq gfx update on slider change
+            // Set up equalizer graphics update on slider change
             var me = this;
             $( "[id^=eq_]" ).on( "slide", function() {
-                me.updatedEqGraphic();
+                me.updateEqGraphic();
             } );
 
-            //refresh the equalizer graphics
-            this.updatedEqGraphic();
+            // Refresh the equalizer graphics
+            this.updateEqGraphic();
         };
 
-        WebAudioApp.prototype.updatedEqGraphic = function () {
-            var FREQ_MIN = 10;
-            var FREQ_MAX = Math.round(
-                                      this.audioContext.sampleRate * 0.5 );
+        /**
+         * Update the equalizer graphics
+         * @private
+         */
+        WebAudioApp.prototype.updateEqGraphic = function() {
+            var FREQ_MIN  = 10;             // Hz
+            var FREQ_MAX  = Math.round(
+                    this.audioContext.sampleRate * 0.5 );
+
             var MAG_MIN = -80;
             var MAG_MAX = 80;
 
-            //Build the freq response sampler list
+            // Build the frequency response sampler list
             if( this.eqFreqs == null ) {
                 var FREQS_NUM = 100;
                 var FREQ_STEP = (FREQ_MAX - FREQ_MIN) / (FREQS_NUM - 1);
 
-                this.eqFreqs = new Float32Array ( FREQS_NUM );
-
-                for( var freqIndex = 0; freqIndex < FREQS_NUM; freqIndex++ ){
-                    this.eqFreqs[freqIndex] = Math.round( FREQ_MIN + (freqIndex * FREQ_STEP) );
-                }
+                this.eqFreqs = new Float32Array( FREQS_NUM );
+                for( var freqIndex = 0; freqIndex < FREQS_NUM; freqIndex++ )
+                    this.eqFreqs[freqIndex] =
+                        Math.round( FREQ_MIN + (freqIndex * FREQ_STEP) );
             }
 
-            //if we have an update scheduled... dont do anything
+            // If we have an update scheduled, don't do anything
             if( this.eqUpdateHandle != null )
                 return;
 
-            //schedule the graphic update
-            this.eqUpdateHandle = later(0, function() {
+            // Schedule the graphic update
+            this.eqUpdateHandle = later( 0, function(){
                 this.eqUpdateHandle = null;
 
-                var canvasCtx = $('#eqcanvas')[0].getContext( "2d" );
-                var canvasWidth = canvasCtx.canvas.width;
-                var canvasHeight = canvasCtx.canvas.height;
+                var canvasCtx       = $( "#eqcanvas" )[0].getContext( "2d" );
+                var canvasWidth     = canvasCtx.canvas.width;
+                var canvasHeight    = canvasCtx.canvas.height;
 
-                //calculate the draw steps
+                // Calculate the draw steps
                 var stepX = canvasWidth / (FREQ_MAX - FREQ_MIN);
-                var stepY = canvasHeight / (MAG_MAX - MAG_MIN);
+                var stepY = canvasHeight / (MAG_MAX - MAG_MIN );
 
-                //clear current canvas
+                // Clear the canvas
                 canvasCtx.fillStyle = "#f0f0f0";
                 canvasCtx.fillRect( 0, 0, canvasWidth, canvasHeight );
 
-                //draw the frequency response
+                // Draw the frequency response
                 var eqFreqs = this.eqFreqs;
-                var eqMag = this.musicLayer.getEqResponse(eqFreqs);
+                var eqMag   = this.musicLayer.getEqResponse( eqFreqs );
                 var firstPt = true;
                 canvasCtx.beginPath();
-                for(var index = 0; index < eqFreqs.length; index++ ) {
-                    var x = Math.round(
-                                       (eqFreqs[index] - FREQ_MIN) * stepX);
-                    var y = canvasHeight - Math.round(
-                                                      (eqMag[index] - MAG_MIN) * stepY );
+                for( var index = 0; index < eqFreqs.length; index++ ) {
+                    var x = Math.round( (eqFreqs[index] - FREQ_MIN) * stepX );
+                    var y = canvasHeight -
+                                Math.round( (eqMag[index] - MAG_MIN) * stepY );
+
                     if( firstPt ) {
                         firstPt = false;
                         canvasCtx.moveTo( x, y );
                     } else {
-                        canvasCtx.lineTo( x, y) ;
+                        canvasCtx.lineTo( x, y );
                     }
                 }
 
-                canvasCtx.strokeStyle = "#ff0000"; //red line
+                canvasCtx.strokeStyle = "#ff0000";  // red line
                 canvasCtx.stroke();
 
-                //draw the neutral response line
-                var neutralY = canvasHeight - Math.round( (0 - MAG_MIN) * stepY );
+                // Draw the neutral response line
+                var neutralY = canvasHeight -
+                        Math.round( (0 - MAG_MIN) * stepY );
 
                 canvasCtx.beginPath();
                 canvasCtx.moveTo( 0, neutralY );
                 canvasCtx.lineTo( canvasWidth, neutralY );
 
-                canvasCtx.strokeStyle = "#3030ff"; //blue line
+                canvasCtx.strokeStyle = "#3030ff";  // blue line
                 canvasCtx.stroke();
             }, this );
         };
@@ -390,10 +413,10 @@
          * @param {String}      label           The slider label
          * @param {Object}      [override]      The slide overrides
          *
-         * @param {String}      override.value          Slider value
-         * @param {Number}      override.min            Minimum slider value
-         * @param {Number}      override.max            Maximum slider value
-         * @param {String}      override.orientation    Slider orientation
+         * @param {String}      [override.value]            Slider value
+         * @param {Number}      [override.min]              Minimum slider value
+         * @param {Number}      [override.max]              Maximum slider value
+         * @param {String}      [override.orientation]      Slider orientation
          */
         WebAudioApp.prototype.initSlider = function( elemId,
                                                      audioParam,
@@ -573,20 +596,19 @@
         <h2>Audio Mixer</h2>
         <form>
             <div class="audiopanel" style="text-align: center;">
-                <h3>EQ</h3>
-                <canvas id="eqcanvas" width="400" height="250">
-                </canvas><br/>
+                <h3>Equalizer</h3>
+                <canvas id="eqcanvas" width="400" height="250"></canvas><br>
                 <div style="display: inline-block; margin: 0 20px;">
-                    <span id="eq_label_0"></span><br/>
+                    <span id="eq_label_0"></span><br>
                     <div style="display: inline-block;">
-                        <span id="eq_gain_0" style="display: inline-block; height: 100px; margin: 10px;"></span><br/>
+                        <span id="eq_gain_0" style="display: inline-block; height: 100px; margin: 10px;"></span><br>
                         <span>Gain</span>
                     </div>
                 </div>
-                 <div style="display: inline-block; margin: 0 20px;">
-                    <span id="eq_label_1"></span><br/>
+                <div style="display: inline-block; margin: 0 20px;">
+                    <span id="eq_label_1"></span><br>
                     <div style="display: inline-block;">
-                        <span id="eq_gain_1" style="display: inline-block; height: 100px; margin: 10px;"></span><br/>
+                        <span id="eq_gain_1" style="display: inline-block; height: 100px; margin: 10px;"></span><br>
                         <span>Gain</span>
                     </div>
                     <div style="display: inline-block;">
@@ -594,10 +616,10 @@
                         <span>Q</span>
                     </div>
                 </div>
-                 <div style="display: inline-block; margin: 0 20px;">
-                    <span id="eq_label_2"></span><br/>
+                <div style="display: inline-block; margin: 0 20px;">
+                    <span id="eq_label_2"></span><br>
                     <div style="display: inline-block;">
-                        <span id="eq_gain_2" style="display: inline-block; height: 100px; margin: 10px;"></span><br/>
+                        <span id="eq_gain_2" style="display: inline-block; height: 100px; margin: 10px;"></span><br>
                         <span>Gain</span>
                     </div>
                     <div style="display: inline-block;">
@@ -605,10 +627,10 @@
                         <span>Q</span>
                     </div>
                 </div>
-                 <div style="display: inline-block; margin: 0 20px;">
-                    <span id="eq_label_3"></span><br/>
+                <div style="display: inline-block; margin: 0 20px;">
+                    <span id="eq_label_3"></span><br>
                     <div style="display: inline-block;">
-                        <span id="eq_gain_3" style="display: inline-block; height: 100px; margin: 10px;"></span><br/>
+                        <span id="eq_gain_3" style="display: inline-block; height: 100px; margin: 10px;"></span><br>
                         <span>Gain</span>
                     </div>
                     <div style="display: inline-block;">
@@ -616,13 +638,15 @@
                         <span>Q</span>
                     </div>
                 </div>
-                 <div style="display: inline-block; margin: 0 20px;">
-                    <span id="eq_label_4"></span><br/>
+                <div style="display: inline-block; margin: 0 20px;">
+                    <span id="eq_label_4"></span><br>
                     <div style="display: inline-block;">
-                        <span id="eq_gain_4" style="display: inline-block; height: 100px; margin: 10px;"></span><br/>
+                        <span id="eq_gain_4" style="display: inline-block; height: 100px; margin: 10px;"></span><br>
                         <span>Gain</span>
                     </div>
                 </div>
+            </div>
+            <div class="audiopanel" style="text-align: center;">
                 <span id="musicvol_label">Volume </span>
                 <span id="musicvol" style="display: inline-block; width: 300px;"></span>
             </div>
