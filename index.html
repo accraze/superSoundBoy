@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/html">
 <head>
-    <title>Web Audio</title>
+    <title>Super Soundboy</title>
 
     <!-- CSS style sheets -->
     <link href="thirdparty/css/pepper-grinder/jquery-ui-1.10.2.custom.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <link href="app.css" rel="stylesheet">
 
     <!-- Third party libraries -->
     <script type="text/javascript" src="thirdparty/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="thirdparty/jquery-ui-1.10.2.custom.min.js"></script>
+
+
+    <link  href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Helper libraries -->
     <script type="text/javascript" src="utils.js"></script>
@@ -251,35 +255,95 @@
             this.musicStartSecs = -1;
             this.activeMusicGroupCount = 0;
 
-            // Initialize the beats as one group
+            // Initialize beats as one group
             this.initMusic(
                 "#beat1",
                 "beats",
-                "assets/looperman-blandbru-nu-step-with-a-punch-120-bpm.wav" );
+                "assets/dnb160.wav" );
             this.initMusic(
                 "#beat2",
                 "beats",
-                "assets/looperman-blueeskies-club-beat-120-bpm.wav" );
-
-            // Initialize the melodies as one group
+                "assets/looperman-l-0082073-0016550-mrrobot-mrrobot-dnbazzz-g-02-160.wav" );
             this.initMusic(
-                "#melody1",
-                "melodies",
-                "assets/looperman-morpheusd-dreamworld-fullpiano-120-bpm.wav" );
+                "#beat3",
+                "beats",
+                "assets/looperman-l-1048767-0076807-buffalonugaluss-dnb-breaks.wav");
             this.initMusic(
-                "#melody2",
-                "melodies",
-                "assets/looperman-morpheusd-dreamworld-piano-120-bpm.wav" );
+                "#beat4",
+                "beats",
+                "assets/looperman-l-0063133-0011583-rogueai-amen-break-sliced-160.wav");
 
-            // Initialize the accompaniments as individual groups
+            // Initialize the instruments as one group
             this.initMusic(
                 "#guitar",
-                "guitar",
-                "assets/looperman-morpheusd-dreamyworld-guitar-120-bpm.wav" );
+                "instruments",
+                "assets/looperman-l-1295091-0077015-gdenza-12-bar-a-blues.wav" );
             this.initMusic(
-                "#pad",
-                "pad",
-                "assets/looperman-morpheusd-dreamyworld-pad-120-bpm.wav" );
+                "#piano",
+                "instruments",
+                "assets/looperman-l-0450777-0077228-boysurgeon-piano.wav" );
+            this.initMusic(
+                "#bass",
+                "instruments",
+                "assets/looperman-l-0379853-0063872-alen9r-ops-cats-banger-bass.wav" );
+            this.initMusic(
+                "#orchestra",
+                "instruments",
+                "assets/looperman-l-0139050-0047375-dusthill-who-dat-orchestral.wav" );
+
+            // Initialize the synths as individual groups
+            this.initMusic(
+                "#woozySynth",
+                "synths",
+                "assets/looperman-l-1033898-0077790-gabriel766-you-wont-remember.wav" );
+            this.initMusic(
+                "#raveSynth",
+                "synths",
+                "assets/looperman-l-1177594-0075459-robosocks-rave-synth.wav" );
+            this.initMusic(
+                "#shredSynth",
+                "synths",
+                "assets/looperman-l-0671112-0067273-danke-shred.wav" );
+            this.initMusic(
+                "#electro",
+                "synths",
+                "assets/looperman-l-0148594-0015226-ecksjoe-dnb-techno-groove-loop.wav" );
+
+            //initialize the sfx
+            this.initMusic(
+                "#drop1",
+                "drop1",
+                "assets/looperman-l-0562523-0047663-digitalskyy-bombs-away-mayday-malone.wav" );
+            this.initMusic(
+                "#applause",
+                "applause",
+                "assets/applause.mp3" );
+            this.initMusic(
+                "#airhorn",
+                "airhorn",
+                "assets/airHorn.mp3" ); 
+            this.initMusic(
+                "#wub",
+                "wub",
+                "assets/looperman-l-0691016-0058556-lfbofficial-heavy-bass-shot-160-bpm.wav" );
+
+            //initialize the banter
+            this.initMusic(
+                "#jesus",
+                "jesus",
+                "assets/jesusChrist.mp3" );
+            this.initMusic(
+                "#dread",
+                "dread",
+                "assets/dreadControl.mp3" );
+            this.initMusic(
+                "#tellDj",
+                "tellDj",
+                "assets/tellDj.mp3" );
+            this.initMusic(
+                "#sizzla",
+                "sizzla",
+                "assets/sizzla.mp3" );
 
             // Initialize the volume slider
             this.initSlider(
@@ -592,12 +656,25 @@
     </script>
 </head>
 <body>
-    <div id="appwindow">
-        <h2>Audio Mixer</h2>
+<nav class="navbar navbar-default" role="navigation">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>    
+  </div>
+  <div class="navbar-collapse collapse">
+    <ul class="nav nav-justified">
+      <li><a href="#" class="navbar-brand"><i class="fa fa-music"></i>&nbsp;&nbsp;Super Soundboy&nbsp;&nbsp;<i class="fa fa-music"></i></a></li>
+    </ul>
+  </div>
+</nav>
+    <div id="appwindow"><center>
         <form>
             <div class="audiopanel" style="text-align: center;">
-                <h3>Equalizer</h3>
-                <canvas id="eqcanvas" width="400" height="250"></canvas><br>
+                <h3>Graphic EQ</h3>
+                <canvas id="eqcanvas" width="500" height="250"></canvas><br>
                 <div style="display: inline-block; margin: 0 20px;">
                     <span id="eq_label_0"></span><br>
                     <div style="display: inline-block;">
@@ -651,31 +728,63 @@
                 <span id="musicvol" style="display: inline-block; width: 300px;"></span>
             </div>
             <div class="audiopanel">
-                <h3>Beats</h3>
+                <h3>Breakbeats</h3>
                 <input type="checkbox" id="beat1" />
                 <label for="beat1">Beat 1</label>
                 <input type="checkbox" id="beat2" />
                 <label for="beat2">Beat 2</label>
+                <input type="checkbox" id="beat3" />
+                <label for="beat3">Beat 3</label>
+                <input type="checkbox" id="beat4" />
+                <label for="beat4">Beat 4</label>
             </div>
             <div class="audiopanel">
-                <h3>Melody</h3>
-                <input type="checkbox" id="melody1" />
-                <label for="melody1">Melody 1</label>
-                <input type="checkbox" id="melody2" />
-                <label for="melody2">Melody 2</label>
-            </div>
-            <div class="audiopanel">
-                <h3>Accompaniments</h3>
+                <h3>Instruments</h3>
+                <input type="checkbox" id="piano" />
+                <label for="piano">Piano</label>
                 <input type="checkbox" id="guitar" />
                 <label for="guitar">Guitar</label>
-                <input type="checkbox" id="pad" />
-                <label for="pad">Pad</label>
+                <input type="checkbox" id="bass" />
+                <label for="bass">Bass</label>
+                <input type="checkbox" id="orchestra" />
+                <label for="orchestra">Orchestra</label>
+            </div>
+            <div class="audiopanel">
+                <h3>Synths</h3>
+                <input type="checkbox" id="woozySynth" />
+                <label for="woozySynth">Woozy</label>
+                <input type="checkbox" id="raveSynth" />
+                <label for="raveSynth">Rave</label>
+                <input type="checkbox" id="shredSynth" />
+                <label for="shredSynth">Shredder</label>
+                <input type="checkbox" id="electro" />
+                <label for="electro">Electro</label>
+
+            </div>
+            <div class="audiopanel">
+                <h3>SFX</h3>
+                <input type="checkbox" id="drop1" />
+                <label for="drop1">Drop</label>
+                <input type="checkbox" id="applause" />
+                <label for="applause">Applause</label>
+                <input type="checkbox" id="airhorn" />
+                <label for="airhorn">Airhorn</label>
+                <input type="checkbox" id="wub" />
+                <label for="wub">Wub</label>
+            </div>
+            <div class="audiopanel">
+                <h3>Banter</h3>
+                <input type="checkbox" id="dread" />
+                <label for="dread">Dread Control</label>
+                <input type="checkbox" id="jesus" />
+                <label for="jesus">Jeeeeez</label>
+                <input type="checkbox" id="tellDj" />
+                <label for="tellDj">Tell Em DJ</label>
+                <input type="checkbox" id="sizzla" />
+                <label for="sizzla">Verbal Destruction</label>
             </div>
         </form>
-    </div>
-    <div id="outputwindow">
-        <h1>Console</h1>
-        <div id="output"></div>
+    </center>   
     </div>
 </body>
 </html>

@@ -11,6 +11,7 @@
 
     padding:    0.25rem;
     overflow:   auto;
+    margin-top: 55px;
 }
 
 #appwindow h1,
@@ -42,40 +43,7 @@
     min-width: 10rem;
 }
 
-/*
-    Output window styling
-    -------------------------------------
-*/
-#outputwindow {
-    position:   absolute;
-    height:     8.5rem;
-    left:       0;
-    right:      0;
-
-    bottom:     0;
-
-    margin:     0;
-    padding:    0;
-}
-
-#outputwindow h1 {
-    font-size:      1.0rem;
-    font-weight:    bold;
-    color:          #A0A0A0;
-    margin:         0;
-    padding:        0;
-}
-
-#output {
-    font-size:  0.8rem;
-    height:     6rem;
-    overflow:   auto;
-    margin:     0.25rem;
-    padding:    0.25rem;
-    border:     2px solid #A0A0A0
-}
-
-#output p {
-    margin:     0;
-    padding:    0;
-}
+.navbar-brand {
+  float: none !important;
+  text-align:center;
+  }
