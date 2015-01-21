@@ -2,6 +2,13 @@
     Application window styling
     -------------------------------------
 */
+
+@import url("http://fonts.googleapis.com/css?family=Play");
+body {
+  background-color: #fff;
+  color: #242424;
+  font-family: 'Play', sans-serif !important;
+}
 #appwindow {
     position: absolute;
     left:       0;
@@ -11,7 +18,7 @@
 
     padding:    0.25rem;
     overflow:   auto;
-    margin-top: 55px;
+    margin-top: 100px;
 }
 
 #appwindow h1,
@@ -43,7 +50,22 @@
     min-width: 10rem;
 }
 
-.navbar-brand {
-  float: none !important;
-  text-align:center;
-  }
+.navbar-header {
+    float: left;
+    padding: 0px;
+    text-align: center;
+    width: 100%;
+}
+
+.navbar {
+    background-color: #fcfcfc;
+}
+
+.navbar-brand
+{
+    position: absolute;
+    width: 100%;
+    left: 0;
+    text-align: center;
+    margin: auto;
+}
