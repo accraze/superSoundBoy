@@ -1,4 +1,5 @@
-flask
-flask-login
-flask-sqlalchemy
-sqlalchemy-migrate
+Flask
+Flask-Login
+Flask-Restless
+Flask-SQLAlchemy
+Flask-WTF
