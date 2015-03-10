@@ -12,7 +12,6 @@
     <script type="text/javascript" src="thirdparty/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="thirdparty/jquery-ui-1.10.2.custom.min.js"></script>
 
-
     <link  href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Audio App -->
@@ -29,16 +28,45 @@ $(document).ready( function(){
 });
 
 </script>
+<script>
+  $(function() {
+    $('div#login').dialog({ autoOpen: false })
+    $('#loginLink').click(function(){ $('div#login').dialog('open'); });
+    $('#loginSubmit').submit(function(e){
+        var postData = $(this).serializeArray();
+        var formURL = $(this).attr("action");
+        $.ajax(
+        {
+            url : "http://localhost:5000/api/user",
+            type: "POST",
+            data : postData,
+            success:function(data, textStatus, jqXHR) 
+            {
+                //data: return data from server
+                console.log(data)
+            },
+            error: function(jqXHR, textStatus, errorThrown) 
+            {
+                //if fails
+                console.log(errorThrown)
+                console.log(postData)      
+            }
+        });
+        e.preventDefault(); //STOP default action
+        e.unbind(); //unbind. to stop multiple form submit.
+    });
+  });
+</script>
 
 <link href="/assets/img/favicon.ico" rel="icon" type="image/x-icon" />
 </head>
 <body>
 <nav class="navbar" role="navigation" style="margin-bottom: 0px !important;">
-            <center><div class="navbar-brand" style="margin-bottom:5px!important;"><img  height="75px" class="center-block" src="assets/img/logo.png"/><br><br></div></center>
-<li><a data-toggle="modal" data-target="#modal" href="register.html" class="pull pull-left">Register</a></li>
-<li><a data-toggle="modal" data-target="#modal" href="login.html">Login </a></li>            
+            <center><div class="navbar-brand" style="margin-bottom:5px!important;"><img  height="75px" class="center-block" src="assets/img/logo.png"/><br><br></div></center>       
 </nav>
     <div id="appwindow"><center>
+        <li><a data-toggle="modal" data-target="#modal" href="#register" class="pull pull-left">Register</a></li>
+        <li><a data-toggle="modal" data-target="#modal" href="#login" id="loginLink">Login </a></li>     
         <form>
             <div class="audiopanel" style="text-align: center;">
                 <h3>Graphic EQ</h3>
@@ -154,6 +182,21 @@ $(document).ready( function(){
         </form>
     </center>   
     </div>
+    <div id="login">
+    <form class="form-signin">
+        <h2 class="form-signin-heading">Please sign in</h2>
+        <label for="inputEmail" class="sr-only">Email address</label>
+        <input type="email" id="inputEmail" class="form-control" placeholder="Email address" required="" autofocus="">
+        <label for="inputPassword" class="sr-only">Password</label>
+        <input type="password" id="inputPassword" class="form-control" placeholder="Password" required="">
+        <div class="checkbox">
+          <label>
+            <input type="checkbox" value="remember-me"> Remember me
+          </label>
+        </div>
+        <button class="btn btn-lg btn-primary btn-block" type="submit" id="loginSubmit">Sign in</button>
+      </form>
+  </div>
     <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -164,5 +207,6 @@ $(document).ready( function(){
   ga('send', 'pageview');
 
 </script>
+
 </body>
 </html>

@@ -1,8 +1,9 @@
-from flask import render_template, flash, redirect, session, url_for, request, g
+from flask import render_template, flash, redirect, session, url_for, request
 from flask.ext.login import login_user, logout_user, current_user, \
     login_required
 
-from app import login_manager, app
+from app import login_manager, app, db, api_manager
+from .models import User
 from .forms import LoginForm
 
 @login_manager.user_loader
